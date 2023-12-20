@@ -63,9 +63,9 @@ public class ConsumerService : IHostedService
 
         var assigned = false;
 
-        // foreach(var config in _config.AsEnumerable()) {
-        //     Console.WriteLine($"{config.Key} = {config.Value}");
-        // }
+        foreach(var config in _config.AsEnumerable()) {
+            Console.WriteLine($"{config.Key} = {config.Value}");
+        }
 
         cConfig.Set("auto.offset.reset","earliest");
         cConfig.Set("enable.auto.offset.store","false");
