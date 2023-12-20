@@ -21,6 +21,8 @@ using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
 using System.Threading;
 using Confluent.Kafka;
+using Org.BouncyCastle.Crypto.Modes;
+using Confluent.Kafka.Admin;
 
 
 /// <summary>
@@ -40,22 +42,34 @@ public class ConsumerService : IHostedService
         _config = config;
     }
 
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("1. StartAsync has been called.");
+        ConsumerConfig cConfig; 
 
-        var cConfig = _config.GetSection("Consumer").Get<ConsumerConfig>().ThrowIfContainsNonUserConfigurable();
+        var sb = _config.GetSection("k8s:bindings:kafka");
+        var sbExists = sb.Exists();
+        if(sbExists){
+            _logger.LogInformation("bindings exist");
+            cConfig = sb.Get<ConsumerConfig>().ThrowIfContainsNonUserConfigurable();
+        }else{
+            cConfig = _config.GetSection("Consumer").Get<ConsumerConfig>().ThrowIfContainsNonUserConfigurable();
+
+        }
+
 
         var topicName = _config.GetValue<string>("General:TopicName");
 
         var assigned = false;
 
-        foreach(var config in _config.AsEnumerable()) {
-            Console.WriteLine($"{config.Key} = {config.Value}");
-        }
+        // foreach(var config in _config.AsEnumerable()) {
+        //     Console.WriteLine($"{config.Key} = {config.Value}");
+        // }
 
+        cConfig.Set("auto.offset.reset","earliest");
         cConfig.Set("enable.auto.offset.store","false");
-        using (var consumer = new ConsumerBuilder<string, string>(cConfig)
+        using (var consumer = new ConsumerBuilder<string, string>(cConfig)     
                                 .SetPartitionsAssignedHandler((c, ps) => { assigned = true; }).Build())
         {
             Console.WriteLine("\n-----------------------------------------------------------------------");
