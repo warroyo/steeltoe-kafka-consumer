@@ -55,8 +55,8 @@ namespace KafkaExample
             
             IHost svc = host.Build();
             svc.RunAsync();
+            
         }
-
     }
 
 }

@@ -46,15 +46,15 @@ public class ConsumerService : IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("1. StartAsync has been called.");
-        ConsumerConfig cConfig; 
+        var cConfig = new ConsumerConfig();
 
         var sb = _config.GetSection("k8s:bindings:kafka");
         var sbExists = sb.Exists();
         if(sbExists){
             _logger.LogInformation("bindings exist");
-            cConfig = sb.Get<ConsumerConfig>().ThrowIfContainsNonUserConfigurable();
+            sb.Bind(cConfig);
         }else{
-            cConfig = _config.GetSection("Consumer").Get<ConsumerConfig>().ThrowIfContainsNonUserConfigurable();
+             _config.GetSection("Consumer").Bind(cConfig);
 
         }
 
@@ -69,7 +69,15 @@ public class ConsumerService : IHostedService
 
         cConfig.Set("auto.offset.reset","earliest");
         cConfig.Set("enable.auto.offset.store","false");
-        using (var consumer = new ConsumerBuilder<string, string>(cConfig)     
+        using (var consumer = new ConsumerBuilder<Ignore, string>(cConfig)
+                                .SetLogHandler((c, msg) =>
+                                {
+                                   _logger.LogInformation(msg.Message);
+                                })
+                                .SetErrorHandler((c, err) =>
+                                {
+                                    _logger.LogError(err.Reason);
+                                })
                                 .SetPartitionsAssignedHandler((c, ps) => { assigned = true; }).Build())
         {
             Console.WriteLine("\n-----------------------------------------------------------------------");
