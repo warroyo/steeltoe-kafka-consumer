@@ -91,6 +91,9 @@ public class ConsumerService : IHostedService
             {
                 while (true)
                 {
+                    Console.WriteLine("sleeping 15 seconds");
+                    System.Threading.Thread.Sleep(15000);
+                    
                     try
                     {
                         var consumeResult = consumer.Consume(cancellationToken);
